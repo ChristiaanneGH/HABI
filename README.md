@@ -1,1 +1,1 @@
-GenesisAI
+Home Assistant Booking Intelligence 
