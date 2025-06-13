@@ -236,7 +236,7 @@ export default function GenesisAITab() {
         colors={['#0041C2', '#1E3A8A']}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>GenesisAI Assistant</Text>
+        <Text style={styles.headerTitle}>HABI Assistant</Text>
         <Text style={styles.headerSubtitle}>Your personal service expert</Text>
       </LinearGradient>
 
