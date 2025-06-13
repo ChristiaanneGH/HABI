@@ -10,28 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  Monitor,
-  Wrench,
-  Zap,
-  Thermometer,
-  Car,
-  Star,
-  MapPin,
-  Shield,
-  Settings,
-  Hammer,
-  Home,
-  Sparkles,
-  Bug,
-  Trees,
-  Paintbrush,
-  Square,
-  Construction,
-  Battery,
-  Trash,
-  ChevronRight,
-} from 'lucide-react-native';
+import { Monitor, Wrench, Zap, Thermometer, Car, Star, MapPin, Shield, Settings, Hammer, Chrome as Home, Sparkles, Bug, Trees, Paintbrush, Square, Construction, Battery, Trash, ChevronRight } from 'lucide-react-native';
 import { getServiceCategories, getServiceProvidersByCategory, ServiceProvider, ServiceCategory } from '@/lib/supabaseService';
 
 const { width } = Dimensions.get('window');
