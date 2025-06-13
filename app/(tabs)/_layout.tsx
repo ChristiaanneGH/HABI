@@ -24,7 +24,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'GenesisAI',
+          title: 'HABI',
           tabBarIcon: ({ size, color }) => (
             <MessageCircle size={size} color={color} />
           ),
