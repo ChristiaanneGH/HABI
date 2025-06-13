@@ -28,7 +28,7 @@ export default function GenesisAITab() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hello! I'm GenesisAI, your personal service assistant. I can help you find and book local professionals for computer repair, plumbing, electrical work, HVAC, and car repair. What service do you need today?",
+      text: "Hello! I'm Habi, your personal service assistant. I can help you find and book local professionals. What home service do you need today?",
       isAI: true,
       timestamp: new Date(),
     },
