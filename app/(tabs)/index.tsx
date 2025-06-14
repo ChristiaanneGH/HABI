@@ -131,6 +131,15 @@ export default function GenesisAITab() {
       'painting': 'Painting Services',
       'handyman': 'General Handyman',
       'repair': 'General Handyman',
+      'laundry': 'Laundry Services',
+      'wash': 'Laundry Services',
+      'iron': 'Laundry Services',
+      'pest': 'Pest Control',
+      'bug': 'Pest Control',
+      'insect': 'Pest Control',
+      'garden': 'Landscaping & Lawn Care',
+      'lawn': 'Landscaping & Lawn Care',
+      'landscaping': 'Landscaping & Lawn Care',
     };
 
     // Find matching service category
@@ -170,7 +179,7 @@ export default function GenesisAITab() {
     
     // Default response for unrecognized input
     return {
-      aiResponse: "I understand you need help with a service. Could you please specify which type of service you're looking for?\n\n• Computer/IT repair\n• Plumbing\n• Electrical work\n• HVAC (heating/cooling)\n• Auto repair\n• House cleaning\n• Painting\n• General handyman services\n\nOnce you tell me the service type, I can find the perfect professional for your needs!",
+      aiResponse: "I understand you need help with a service. Could you please specify which type of service you're looking for?\n\n• Computer/IT repair\n• Plumbing\n• Electrical work\n• HVAC (heating/cooling)\n• Auto repair\n• House cleaning\n• Painting\n• General handyman services\n• Laundry services\n• Pest control\n• Landscaping\n\nOnce you tell me the service type, I can find the perfect professional for your needs!",
     };
   };
 
@@ -184,6 +193,9 @@ export default function GenesisAITab() {
       'House Cleaning': 'regular cleaning, deep cleaning, and move-in/out cleaning services',
       'Painting Services': 'interior and exterior painting for residential and commercial properties',
       'General Handyman': 'home repairs, furniture assembly, and general maintenance tasks',
+      'Laundry Services': 'wash, dry, fold, ironing, and specialized garment care',
+      'Pest Control': 'insect treatment, rodent control, and pest prevention services',
+      'Landscaping & Lawn Care': 'garden maintenance, lawn care, tree services, and outdoor beautification',
     };
     
     return descriptions[serviceType] || 'various professional services';
@@ -222,10 +234,12 @@ export default function GenesisAITab() {
       </Text>
       
       {message.serviceProviders && message.serviceProviders.length > 0 && (
-        <ServiceProvidersList
-          providers={message.serviceProviders}
-          serviceType={message.serviceType || 'service'}
-        />
+        <View style={styles.serviceProvidersContainer}>
+          <ServiceProvidersList
+            providers={message.serviceProviders}
+            serviceType={message.serviceType || 'service'}
+          />
+        </View>
       )}
     </View>
   );
@@ -261,7 +275,7 @@ export default function GenesisAITab() {
                 </Text>
               </View>
               <Text style={[styles.messageText, { color: '#333', fontStyle: 'italic' }]}>
-                GenesisAI is thinking...
+                Habi is thinking...
               </Text>
             </View>
           )}
@@ -365,6 +379,12 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     lineHeight: 22,
+  },
+  serviceProvidersContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
   },
   inputContainer: {
     paddingHorizontal: 16,

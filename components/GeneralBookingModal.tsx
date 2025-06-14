@@ -10,7 +10,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import { X, Calendar, Clock, MapPin, FileText, CreditCard, Star, Shield, Phone, MessageCircle } from 'lucide-react-native';
+import { X, Calendar, Clock, MapPin, FileText, CreditCard, Star, Shield, Phone, MessageCircle, ChevronDown } from 'lucide-react-native';
 import { ServiceProvider } from '@/lib/supabaseService';
 
 interface GeneralBookingModalProps {
@@ -34,6 +34,8 @@ export default function GeneralBookingModal({
   const [estimatedDuration, setEstimatedDuration] = useState('1-2 hours');
   const [contactPreference, setContactPreference] = useState('phone');
   const [loading, setLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const timeSlots = [
     '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
@@ -68,10 +70,27 @@ export default function GeneralBookingModal({
           weekday: 'short', 
           month: 'short', 
           day: 'numeric' 
-        })
+        }),
+        fullDate: date
       });
     }
     return dates;
+  };
+
+  const formatSelectedDate = () => {
+    if (!selectedDate) return 'Select service date';
+    const date = new Date(selectedDate);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatSelectedTime = () => {
+    if (!selectedTime) return 'Select preferred time';
+    return selectedTime;
   };
 
   const calculateEstimatedCost = () => {
@@ -264,56 +283,108 @@ export default function GeneralBookingModal({
             </View>
           </View>
 
-          {/* Date Selection */}
+          {/* Date Selection - Calendar Widget */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Preferred Date</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.dateContainer}>
-                {getNextWeekDates().map(date => (
-                  <TouchableOpacity
-                    key={date.value}
-                    style={[
-                      styles.dateButton,
-                      selectedDate === date.value && styles.selectedDateButton
-                    ]}
-                    onPress={() => setSelectedDate(date.value)}
-                  >
-                    <Calendar size={16} color={selectedDate === date.value ? 'white' : '#666'} />
-                    <Text style={[
-                      styles.dateText,
-                      selectedDate === date.value && styles.selectedDateText
-                    ]}>
-                      {date.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+            <TouchableOpacity
+              style={styles.dateTimeSelector}
+              onPress={() => setShowDatePicker(!showDatePicker)}
+            >
+              <Calendar size={20} color="#0041C2" />
+              <Text style={[
+                styles.dateTimeText,
+                !selectedDate && styles.placeholderText
+              ]}>
+                {formatSelectedDate()}
+              </Text>
+              <ChevronDown size={20} color="#666" />
+            </TouchableOpacity>
+            
+            {showDatePicker && (
+              <View style={styles.datePickerContainer}>
+                <ScrollView style={styles.datePickerScroll} showsVerticalScrollIndicator={false}>
+                  {getNextWeekDates().map(date => (
+                    <TouchableOpacity
+                      key={date.value}
+                      style={[
+                        styles.datePickerItem,
+                        selectedDate === date.value && styles.selectedDatePickerItem
+                      ]}
+                      onPress={() => {
+                        setSelectedDate(date.value);
+                        setShowDatePicker(false);
+                      }}
+                    >
+                      <View style={styles.datePickerItemContent}>
+                        <Text style={[
+                          styles.datePickerDay,
+                          selectedDate === date.value && styles.selectedDatePickerText
+                        ]}>
+                          {date.fullDate.toLocaleDateString('en-US', { weekday: 'long' })}
+                        </Text>
+                        <Text style={[
+                          styles.datePickerDate,
+                          selectedDate === date.value && styles.selectedDatePickerText
+                        ]}>
+                          {date.fullDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </Text>
+                      </View>
+                      {selectedDate === date.value && (
+                        <View style={styles.checkmark}>
+                          <Text style={styles.checkmarkText}>✓</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
-            </ScrollView>
+            )}
           </View>
 
-          {/* Time Selection */}
+          {/* Time Selection - Time Widget */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Preferred Time</Text>
-            <View style={styles.timeGrid}>
-              {timeSlots.map(time => (
-                <TouchableOpacity
-                  key={time}
-                  style={[
-                    styles.timeButton,
-                    selectedTime === time && styles.selectedTimeButton
-                  ]}
-                  onPress={() => setSelectedTime(time)}
-                >
-                  <Clock size={14} color={selectedTime === time ? 'white' : '#666'} />
-                  <Text style={[
-                    styles.timeText,
-                    selectedTime === time && styles.selectedTimeText
-                  ]}>
-                    {time}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <TouchableOpacity
+              style={styles.dateTimeSelector}
+              onPress={() => setShowTimePicker(!showTimePicker)}
+            >
+              <Clock size={20} color="#0041C2" />
+              <Text style={[
+                styles.dateTimeText,
+                !selectedTime && styles.placeholderText
+              ]}>
+                {formatSelectedTime()}
+              </Text>
+              <ChevronDown size={20} color="#666" />
+            </TouchableOpacity>
+            
+            {showTimePicker && (
+              <View style={styles.timePickerContainer}>
+                <View style={styles.timePickerGrid}>
+                  {timeSlots.map(time => (
+                    <TouchableOpacity
+                      key={time}
+                      style={[
+                        styles.timePickerItem,
+                        selectedTime === time && styles.selectedTimePickerItem
+                      ]}
+                      onPress={() => {
+                        setSelectedTime(time);
+                        setShowTimePicker(false);
+                      }}
+                    >
+                      <Clock size={16} color={selectedTime === time ? 'white' : '#666'} />
+                      <Text style={[
+                        styles.timePickerText,
+                        selectedTime === time && styles.selectedTimePickerText
+                      ]}>
+                        {time}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
           </View>
 
           {/* Urgency Level */}
@@ -570,61 +641,120 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
   },
-  dateContainer: {
+  
+  // Date/Time Selector Styles
+  dateTimeSelector: {
     flexDirection: 'row',
-    gap: 12,
-    paddingVertical: 8,
-  },
-  dateButton: {
-    backgroundColor: 'white',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
     alignItems: 'center',
-    gap: 4,
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    gap: 12,
+  },
+  dateTimeText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  placeholderText: {
+    color: '#999',
+    fontWeight: '400',
+  },
+  
+  // Date Picker Styles
+  datePickerContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    marginTop: 8,
+    maxHeight: 200,
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
-  selectedDateButton: {
-    backgroundColor: '#0041C2',
-    borderColor: '#0041C2',
+  datePickerScroll: {
+    maxHeight: 200,
   },
-  dateText: {
-    fontSize: 12,
+  datePickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  selectedDatePickerItem: {
+    backgroundColor: '#F0F7FF',
+  },
+  datePickerItemContent: {
+    flex: 1,
+  },
+  datePickerDay: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  datePickerDate: {
+    fontSize: 14,
     color: '#666',
-    fontWeight: '500',
   },
-  selectedDateText: {
+  selectedDatePickerText: {
+    color: '#0041C2',
+  },
+  checkmark: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#0041C2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkmarkText: {
     color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
-  timeGrid: {
+  
+  // Time Picker Styles
+  timePickerContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    marginTop: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  timePickerGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
-  timeButton: {
-    backgroundColor: 'white',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
+  timePickerItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
     gap: 6,
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
-  selectedTimeButton: {
+  selectedTimePickerItem: {
     backgroundColor: '#0041C2',
     borderColor: '#0041C2',
   },
-  timeText: {
+  timePickerText: {
     fontSize: 14,
     color: '#666',
     fontWeight: '500',
   },
-  selectedTimeText: {
+  selectedTimePickerText: {
     color: 'white',
   },
+  
   urgencyContainer: {
     gap: 12,
   },
