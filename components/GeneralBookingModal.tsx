@@ -9,9 +9,12 @@ import {
   TextInput,
   Alert,
   Image,
+  Dimensions,
 } from 'react-native';
-import { X, Calendar, Clock, MapPin, FileText, CreditCard, Star, Shield, Phone, MessageCircle, ChevronDown } from 'lucide-react-native';
+import { X, Calendar, Clock, MapPin, FileText, CreditCard, Star, Shield, Phone, MessageCircle, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { ServiceProvider } from '@/lib/supabaseService';
+
+const { width } = Dimensions.get('window');
 
 interface GeneralBookingModalProps {
   visible: boolean;
@@ -36,11 +39,7 @@ export default function GeneralBookingModal({
   const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-
-  const timeSlots = [
-    '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
-    '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'
-  ];
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const urgencyOptions = [
     { value: 'emergency', label: 'Emergency', color: '#DC2626', surcharge: 100 },
@@ -58,32 +57,25 @@ export default function GeneralBookingModal({
     'Multiple days'
   ];
 
-  const getNextWeekDates = () => {
-    const dates = [];
-    const today = new Date();
-    for (let i = 1; i <= 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      dates.push({
-        value: date.toISOString().split('T')[0],
-        label: date.toLocaleDateString('en-US', { 
-          weekday: 'short', 
-          month: 'short', 
-          day: 'numeric' 
-        }),
-        fullDate: date
-      });
-    }
-    return dates;
+  // Calendar functions
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const formatMonthYear = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
   const formatSelectedDate = () => {
     if (!selectedDate) return 'Select service date';
     const date = new Date(selectedDate);
     return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
+      weekday: 'short',
+      month: 'short',
       day: 'numeric'
     });
   };
@@ -91,6 +83,60 @@ export default function GeneralBookingModal({
   const formatSelectedTime = () => {
     if (!selectedTime) return 'Select preferred time';
     return selectedTime;
+  };
+
+  const generateCalendarDays = () => {
+    const daysInMonth = getDaysInMonth(currentMonth);
+    const firstDay = getFirstDayOfMonth(currentMonth);
+    const days = [];
+    const today = new Date();
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDay; i++) {
+      days.push(null);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+      const dateString = date.toISOString().split('T')[0];
+      const isToday = date.toDateString() === today.toDateString();
+      const isPast = date < today && !isToday;
+      const isSelected = selectedDate === dateString;
+      
+      days.push({
+        day,
+        date: dateString,
+        isToday,
+        isPast,
+        isSelected,
+        disabled: isPast
+      });
+    }
+    
+    return days;
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newMonth = new Date(currentMonth);
+    if (direction === 'prev') {
+      newMonth.setMonth(currentMonth.getMonth() - 1);
+    } else {
+      newMonth.setMonth(currentMonth.getMonth() + 1);
+    }
+    setCurrentMonth(newMonth);
+  };
+
+  // Time picker functions
+  const generateTimeSlots = () => {
+    const times = [];
+    for (let hour = 8; hour <= 17; hour++) {
+      const time12 = hour > 12 ? hour - 12 : hour;
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const timeString = `${time12}:00 ${ampm}`;
+      times.push(timeString);
+    }
+    return times;
   };
 
   const calculateEstimatedCost = () => {
@@ -176,6 +222,7 @@ export default function GeneralBookingModal({
     setUrgencyLevel('normal');
     setEstimatedDuration('1-2 hours');
     setContactPreference('phone');
+    setCurrentMonth(new Date());
   };
 
   const handleClose = () => {
@@ -190,6 +237,179 @@ export default function GeneralBookingModal({
       Alert.alert('Message Provider', `Start a conversation with ${provider.business_name}?`);
     }
   };
+
+  const renderCalendarModal = () => (
+    <Modal
+      visible={showDatePicker}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowDatePicker(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.calendarModal}>
+          <View style={styles.calendarHeader}>
+            <Text style={styles.calendarYear}>{currentMonth.getFullYear()}</Text>
+            <Text style={styles.calendarMonthDay}>
+              {formatSelectedDate() !== 'Select service date' ? formatSelectedDate() : formatMonthYear(currentMonth)}
+            </Text>
+          </View>
+          
+          <View style={styles.calendarContent}>
+            <View style={styles.calendarNavigation}>
+              <TouchableOpacity onPress={() => navigateMonth('prev')} style={styles.navButton}>
+                <ChevronLeft size={20} color="#333" />
+              </TouchableOpacity>
+              <Text style={styles.monthYearText}>{formatMonthYear(currentMonth)}</Text>
+              <TouchableOpacity onPress={() => navigateMonth('next')} style={styles.navButton}>
+                <ChevronRight size={20} color="#333" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.weekDaysHeader}>
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                <Text key={index} style={styles.weekDayText}>{day}</Text>
+              ))}
+            </View>
+            
+            <View style={styles.calendarGrid}>
+              {generateCalendarDays().map((dayData, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.calendarDay,
+                    dayData?.isSelected && styles.selectedCalendarDay,
+                    dayData?.disabled && styles.disabledCalendarDay
+                  ]}
+                  onPress={() => {
+                    if (dayData && !dayData.disabled) {
+                      setSelectedDate(dayData.date);
+                    }
+                  }}
+                  disabled={!dayData || dayData.disabled}
+                >
+                  {dayData && (
+                    <Text style={[
+                      styles.calendarDayText,
+                      dayData.isSelected && styles.selectedCalendarDayText,
+                      dayData.disabled && styles.disabledCalendarDayText
+                    ]}>
+                      {dayData.day}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          
+          <View style={styles.calendarActions}>
+            <TouchableOpacity 
+              style={styles.calendarCancelButton}
+              onPress={() => setShowDatePicker(false)}
+            >
+              <Text style={styles.calendarCancelText}>CANCEL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.calendarOkButton}
+              onPress={() => setShowDatePicker(false)}
+            >
+              <Text style={styles.calendarOkText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderTimePickerModal = () => (
+    <Modal
+      visible={showTimePicker}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowTimePicker(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.timePickerModal}>
+          <View style={styles.timePickerHeader}>
+            <Text style={styles.timePickerTitle}>
+              {selectedTime || '3:15'}
+            </Text>
+            <View style={styles.amPmToggle}>
+              <Text style={styles.amPmText}>AM</Text>
+              <Text style={styles.amPmText}>PM</Text>
+            </View>
+          </View>
+          
+          <View style={styles.clockContainer}>
+            <View style={styles.clockFace}>
+              {/* Clock numbers */}
+              {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((hour, index) => {
+                const angle = (index * 30) - 90; // Start from 12 o'clock
+                const radian = (angle * Math.PI) / 180;
+                const radius = 80;
+                const x = Math.cos(radian) * radius;
+                const y = Math.sin(radian) * radius;
+                
+                return (
+                  <TouchableOpacity
+                    key={hour}
+                    style={[
+                      styles.clockNumber,
+                      {
+                        transform: [
+                          { translateX: x },
+                          { translateY: y }
+                        ]
+                      },
+                      hour === 3 && styles.selectedClockNumber
+                    ]}
+                    onPress={() => {
+                      const time12 = hour;
+                      const ampm = 'PM'; // Default to PM for demo
+                      const timeString = `${time12}:15 ${ampm}`;
+                      setSelectedTime(timeString);
+                    }}
+                  >
+                    <Text style={[
+                      styles.clockNumberText,
+                      hour === 3 && styles.selectedClockNumberText
+                    ]}>
+                      {hour}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              
+              {/* Clock hand */}
+              <View style={styles.clockCenter} />
+              <View style={[
+                styles.clockHand,
+                {
+                  transform: [
+                    { rotate: '0deg' } // Points to 3
+                  ]
+                }
+              ]} />
+            </View>
+          </View>
+          
+          <View style={styles.timePickerActions}>
+            <TouchableOpacity 
+              style={styles.timePickerCancelButton}
+              onPress={() => setShowTimePicker(false)}
+            >
+              <Text style={styles.timePickerCancelText}>CANCEL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.timePickerOkButton}
+              onPress={() => setShowTimePicker(false)}
+            >
+              <Text style={styles.timePickerOkText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <Modal
@@ -283,12 +503,12 @@ export default function GeneralBookingModal({
             </View>
           </View>
 
-          {/* Date Selection - Calendar Widget */}
+          {/* Date Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Preferred Date</Text>
             <TouchableOpacity
               style={styles.dateTimeSelector}
-              onPress={() => setShowDatePicker(!showDatePicker)}
+              onPress={() => setShowDatePicker(true)}
             >
               <Calendar size={20} color="#0041C2" />
               <Text style={[
@@ -299,54 +519,14 @@ export default function GeneralBookingModal({
               </Text>
               <ChevronDown size={20} color="#666" />
             </TouchableOpacity>
-            
-            {showDatePicker && (
-              <View style={styles.datePickerContainer}>
-                <ScrollView style={styles.datePickerScroll} showsVerticalScrollIndicator={false}>
-                  {getNextWeekDates().map(date => (
-                    <TouchableOpacity
-                      key={date.value}
-                      style={[
-                        styles.datePickerItem,
-                        selectedDate === date.value && styles.selectedDatePickerItem
-                      ]}
-                      onPress={() => {
-                        setSelectedDate(date.value);
-                        setShowDatePicker(false);
-                      }}
-                    >
-                      <View style={styles.datePickerItemContent}>
-                        <Text style={[
-                          styles.datePickerDay,
-                          selectedDate === date.value && styles.selectedDatePickerText
-                        ]}>
-                          {date.fullDate.toLocaleDateString('en-US', { weekday: 'long' })}
-                        </Text>
-                        <Text style={[
-                          styles.datePickerDate,
-                          selectedDate === date.value && styles.selectedDatePickerText
-                        ]}>
-                          {date.fullDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </Text>
-                      </View>
-                      {selectedDate === date.value && (
-                        <View style={styles.checkmark}>
-                          <Text style={styles.checkmarkText}>✓</Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
           </View>
 
-          {/* Time Selection - Time Widget */}
+          {/* Time Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Preferred Time</Text>
             <TouchableOpacity
               style={styles.dateTimeSelector}
-              onPress={() => setShowTimePicker(!showTimePicker)}
+              onPress={() => setShowTimePicker(true)}
             >
               <Clock size={20} color="#0041C2" />
               <Text style={[
@@ -357,34 +537,6 @@ export default function GeneralBookingModal({
               </Text>
               <ChevronDown size={20} color="#666" />
             </TouchableOpacity>
-            
-            {showTimePicker && (
-              <View style={styles.timePickerContainer}>
-                <View style={styles.timePickerGrid}>
-                  {timeSlots.map(time => (
-                    <TouchableOpacity
-                      key={time}
-                      style={[
-                        styles.timePickerItem,
-                        selectedTime === time && styles.selectedTimePickerItem
-                      ]}
-                      onPress={() => {
-                        setSelectedTime(time);
-                        setShowTimePicker(false);
-                      }}
-                    >
-                      <Clock size={16} color={selectedTime === time ? 'white' : '#666'} />
-                      <Text style={[
-                        styles.timePickerText,
-                        selectedTime === time && styles.selectedTimePickerText
-                      ]}>
-                        {time}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
           </View>
 
           {/* Urgency Level */}
@@ -493,6 +645,12 @@ export default function GeneralBookingModal({
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Calendar Modal */}
+        {renderCalendarModal()}
+
+        {/* Time Picker Modal */}
+        {renderTimePickerModal()}
       </View>
     </Modal>
   );
@@ -664,95 +822,215 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   
-  // Date Picker Styles
-  datePickerContainer: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    marginTop: 8,
-    maxHeight: 200,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  datePickerScroll: {
-    maxHeight: 200,
-  },
-  datePickerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  selectedDatePickerItem: {
-    backgroundColor: '#F0F7FF',
-  },
-  datePickerItemContent: {
+  // Modal Overlay
+  modalOverlay: {
     flex: 1,
-  },
-  datePickerDay: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 2,
-  },
-  datePickerDate: {
-    fontSize: 14,
-    color: '#666',
-  },
-  selectedDatePickerText: {
-    color: '#0041C2',
-  },
-  checkmark: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#0041C2',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkmarkText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
   
-  // Time Picker Styles
-  timePickerContainer: {
+  // Calendar Modal Styles
+  calendarModal: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    marginTop: 8,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  timePickerGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  timePickerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     borderRadius: 8,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    width: width * 0.85,
+    maxWidth: 320,
+    overflow: 'hidden',
   },
-  selectedTimePickerItem: {
-    backgroundColor: '#0041C2',
-    borderColor: '#0041C2',
+  calendarHeader: {
+    backgroundColor: '#4CAF50',
+    padding: 20,
   },
-  timePickerText: {
-    fontSize: 14,
-    color: '#666',
+  calendarYear: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  calendarMonthDay: {
+    color: 'white',
+    fontSize: 24,
     fontWeight: '500',
   },
-  selectedTimePickerText: {
+  calendarContent: {
+    padding: 16,
+  },
+  calendarNavigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  navButton: {
+    padding: 8,
+  },
+  monthYearText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  weekDaysHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 8,
+  },
+  weekDayText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+    width: 32,
+    textAlign: 'center',
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  calendarDay: {
+    width: '14.28%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  selectedCalendarDay: {
+    backgroundColor: '#4CAF50',
+  },
+  disabledCalendarDay: {
+    opacity: 0.3,
+  },
+  calendarDayText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  selectedCalendarDayText: {
     color: 'white',
+    fontWeight: '600',
+  },
+  disabledCalendarDayText: {
+    color: '#ccc',
+  },
+  calendarActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 16,
+    gap: 16,
+  },
+  calendarCancelButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  calendarCancelText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  calendarOkButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  calendarOkText: {
+    color: '#4CAF50',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  
+  // Time Picker Modal Styles
+  timePickerModal: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    width: width * 0.85,
+    maxWidth: 320,
+    overflow: 'hidden',
+  },
+  timePickerHeader: {
+    backgroundColor: '#4CAF50',
+    padding: 20,
+    alignItems: 'center',
+  },
+  timePickerTitle: {
+    color: 'white',
+    fontSize: 48,
+    fontWeight: '300',
+    marginBottom: 8,
+  },
+  amPmToggle: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  amPmText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 16,
+  },
+  clockContainer: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clockFace: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clockNumber: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedClockNumber: {
+    backgroundColor: '#4CAF50',
+  },
+  clockNumberText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  selectedClockNumberText: {
+    color: 'white',
+  },
+  clockCenter: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+    position: 'absolute',
+  },
+  clockHand: {
+    position: 'absolute',
+    width: 2,
+    height: 80,
+    backgroundColor: '#4CAF50',
+    transformOrigin: 'bottom center',
+    top: 60,
+  },
+  timePickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 16,
+    gap: 16,
+  },
+  timePickerCancelButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  timePickerCancelText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  timePickerOkButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  timePickerOkText: {
+    color: '#4CAF50',
+    fontSize: 14,
+    fontWeight: '600',
   },
   
   urgencyContainer: {
