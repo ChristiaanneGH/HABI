@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Monitor, Wrench, Zap, Thermometer, Car, Star, MapPin, Shield, Settings, Hammer, Chrome as Home, Sparkles, Bug, Trees, Paintbrush, Square, Construction, Battery, Trash, ChevronRight } from 'lucide-react-native';
 import { getServiceCategories, getServiceProvidersByCategory, ServiceProvider, ServiceCategory } from '@/lib/supabaseService';
+import LaundryBookingModal from '@/components/LaundryBookingModal';
 
 const { width } = Dimensions.get('window');
 
@@ -50,6 +51,8 @@ export default function ServicesTab() {
   const [topProviders, setTopProviders] = useState<ServiceProvider[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bookingModalVisible, setBookingModalVisible] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<ServiceProvider | null>(null);
 
   useEffect(() => {
     loadData();
@@ -98,6 +101,24 @@ export default function ServicesTab() {
     } catch (error) {
       console.error('Error loading category providers:', error);
     }
+  };
+
+  const handleBookNow = (provider: ServiceProvider) => {
+    // Check if this is a laundry service provider
+    const isLaundryProvider = provider.service_categories.includes('Laundry Services');
+    
+    if (isLaundryProvider) {
+      setSelectedProvider(provider);
+      setBookingModalVisible(true);
+    } else {
+      // For other services, show a generic booking alert
+      alert(`Booking functionality for ${provider.business_name} will be available soon!`);
+    }
+  };
+
+  const handleBookingConfirmed = () => {
+    // Handle successful booking - could update UI, refresh data, etc.
+    console.log('Booking confirmed successfully');
   };
 
   const renderCategoryTile = (category: ServiceCategoryWithIcon) => {
@@ -186,7 +207,10 @@ export default function ServicesTab() {
             <Text style={styles.price}>₱{provider.hourly_rate}/hr</Text>
           </View>
           
-          <TouchableOpacity style={styles.bookButton}>
+          <TouchableOpacity 
+            style={styles.bookButton}
+            onPress={() => handleBookNow(provider)}
+          >
             <Text style={styles.bookButtonText}>Book Now</Text>
             <ChevronRight size={16} color="white" />
           </TouchableOpacity>
@@ -253,6 +277,19 @@ export default function ServicesTab() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Laundry Booking Modal */}
+      {selectedProvider && (
+        <LaundryBookingModal
+          visible={bookingModalVisible}
+          onClose={() => {
+            setBookingModalVisible(false);
+            setSelectedProvider(null);
+          }}
+          provider={selectedProvider}
+          onBookingConfirmed={handleBookingConfirmed}
+        />
+      )}
     </SafeAreaView>
   );
 }
