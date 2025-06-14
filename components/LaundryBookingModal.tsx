@@ -11,7 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { X, Calendar, Clock, MapPin, Package, ChevronDown } from 'lucide-react-native';
-import { ServiceProvider } from '@/lib/supabaseService';
+import { ServiceProvider, createLaundryBooking } from '@/lib/supabaseService';
 
 interface LaundrySubcategory {
   id: string;
@@ -168,6 +168,13 @@ export default function LaundryBookingModal({
     return selectedTime;
   };
 
+  const getSelectedServiceNames = () => {
+    return selectedServices.map(serviceId => {
+      const service = laundryServices.find(s => s.id === serviceId);
+      return service?.name || '';
+    }).filter(Boolean);
+  };
+
   const handleBooking = async () => {
     if (!selectedServices.length) {
       Alert.alert('Error', 'Please select at least one service');
@@ -189,23 +196,38 @@ export default function LaundryBookingModal({
     setLoading(true);
     
     try {
-      // Simulate booking API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const selectedServiceNames = getSelectedServiceNames();
+      
+      const { data, error } = await createLaundryBooking({
+        provider_id: provider.id,
+        selected_services: selectedServiceNames,
+        pickup_date: selectedDate,
+        pickup_time: selectedTime,
+        pickup_address: pickupAddress,
+        special_instructions: specialInstructions,
+        estimated_cost: estimatedCost
+      });
+
+      if (error) {
+        Alert.alert('Error', error.message || 'Failed to create booking. Please try again.');
+        return;
+      }
       
       Alert.alert(
         'Booking Confirmed!',
-        `Your laundry service has been booked with ${provider.business_name}. They will contact you shortly to confirm pickup details.`,
+        `Your laundry service has been booked with ${provider.business_name}. They will contact you shortly to confirm pickup details.\n\nServices: ${selectedServiceNames.join(', ')}\nEstimated Cost: ₱${estimatedCost.toFixed(2)}\nBooking ID: ${data?.id?.slice(0, 8)}...`,
         [
           {
             text: 'OK',
             onPress: () => {
               onBookingConfirmed();
-              onClose();
+              handleClose();
             }
           }
         ]
       );
     } catch (error) {
+      console.error('Laundry booking error:', error);
       Alert.alert('Error', 'Failed to create booking. Please try again.');
     } finally {
       setLoading(false);
@@ -439,7 +461,7 @@ export default function LaundryBookingModal({
           >
             <Package size={20} color="white" />
             <Text style={styles.bookButtonText}>
-              {loading ? 'Booking...' : `Book Now - ₱${estimatedCost.toFixed(2)}`}
+              {loading ? 'Booking...' : `Send Booking Request - ₱${estimatedCost.toFixed(2)}`}
             </Text>
           </TouchableOpacity>
         </View>

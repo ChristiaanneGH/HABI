@@ -12,7 +12,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { X, Calendar, Clock, MapPin, FileText, CreditCard, Star, Shield, Phone, MessageCircle, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { ServiceProvider } from '@/lib/supabaseService';
+import { ServiceProvider, createBooking } from '@/lib/supabaseService';
 
 const { width } = Dimensions.get('window');
 
@@ -189,25 +189,51 @@ export default function GeneralBookingModal({
     setLoading(true);
     
     try {
-      // Simulate booking API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
       const estimatedCost = calculateEstimatedCost();
+      const primaryServiceCategory = provider.service_categories[0];
       
+      // Create booking notes with additional details
+      const bookingNotes = [
+        `Urgency Level: ${urgencyLevel}`,
+        `Estimated Duration: ${estimatedDuration}`,
+        `Contact Preference: ${contactPreference}`,
+        urgencyLevel !== 'normal' ? `Urgency Surcharge: ₱${urgencyOptions.find(opt => opt.value === urgencyLevel)?.surcharge}` : null
+      ].filter(Boolean).join('\n');
+
+      const { data, error } = await createBooking({
+        provider_id: provider.id,
+        service_category: primaryServiceCategory,
+        description: problemDescription,
+        location: serviceLocation,
+        scheduled_date: selectedDate,
+        scheduled_time: selectedTime,
+        estimated_cost: estimatedCost,
+        notes: bookingNotes,
+        urgency_level: urgencyLevel,
+        estimated_duration: estimatedDuration,
+        contact_preference: contactPreference
+      });
+
+      if (error) {
+        Alert.alert('Error', error.message || 'Failed to create booking. Please try again.');
+        return;
+      }
+
       Alert.alert(
         'Booking Request Sent!',
-        `Your service request has been sent to ${provider.business_name}. They will contact you within 30 minutes to confirm details and provide a final quote.\n\nEstimated Cost: ₱${estimatedCost}`,
+        `Your service request has been sent to ${provider.business_name}. They will contact you within 30 minutes to confirm details and provide a final quote.\n\nEstimated Cost: ₱${estimatedCost}\nBooking ID: ${data?.id?.slice(0, 8)}...`,
         [
           {
             text: 'OK',
             onPress: () => {
               onBookingConfirmed();
-              onClose();
+              handleClose();
             }
           }
         ]
       );
     } catch (error) {
+      console.error('Booking error:', error);
       Alert.alert('Error', 'Failed to send booking request. Please try again.');
     } finally {
       setLoading(false);
