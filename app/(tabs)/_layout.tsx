@@ -1,7 +1,13 @@
+import React, { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { MessageCircle, Grid3x3 as Grid3X3, Calendar, User } from 'lucide-react-native';
+import changeNavigationBarColor from 'react-native-navigation-bar-color';
 
 export default function TabLayout() {
+  useEffect(() => {
+    changeNavigationBarColor('transparent', true);
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
