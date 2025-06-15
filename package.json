@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
-    "lap" : "expo start",
+    "lap": "expo start",
     "build:web": "expo export --platform web",
     "lint": "expo lint"
   },
@@ -36,6 +36,7 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.1",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-navigation-bar-color": "^2.0.2",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.3.0",
     "react-native-screens": "~4.10.0",
