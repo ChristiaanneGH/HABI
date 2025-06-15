@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { MessageCircle, Grid3x3 as Grid3X3, Calendar, User } from 'lucide-react-native';
-import changeNavigationBarColor from 'react-native-navigation-bar-color';
+import * as NavigationBar from 'expo-navigation-bar';
 
 export default function TabLayout() {
   useEffect(() => {
-    changeNavigationBarColor('transparent', true);
+    NavigationBar.setBackgroundColorAsync('#ffffff00'); // transparent
+    NavigationBar.setButtonStyleAsync('dark');
   }, []);
 
   return (
