@@ -26,6 +26,11 @@ export default function TabLayout() {
             fontWeight: '500',
           },
         }}
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: '500',
+          },
+        }}
       >
         <Tabs.Screen
           name="index"
@@ -61,7 +66,7 @@ export default function TabLayout() {
             tabBarIcon: ({ size, color }) => (
               <User size={size} color={color} />
             ),
-          )}
+          }}
         />
       </Tabs>
     </>
