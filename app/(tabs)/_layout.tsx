@@ -5,7 +5,7 @@ import { MessageCircle, Grid3x3 as Grid3X3, Calendar, User } from 'lucide-react-
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  
+
   return (
     <>
       <StatusBar style="auto" translucent={true} />
@@ -21,11 +21,6 @@ export default function TabLayout() {
             paddingTop: 8,
             height: 70 + insets.bottom,
           },
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: '500',
-          },
-        }}
           tabBarLabelStyle: {
             fontSize: 12,
             fontWeight: '500',
